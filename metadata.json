@@ -1,0 +1,6 @@
+{
+  "name": "TypeCarnival - Arcade Keyboarding & Teacher Dashboard",
+  "description": "Engaging elementary typing platform for Grades 2-5 featuring arcade carnival mini-games, adaptive finger-placement lessons, ticket rewards, and a real-time teacher analytics dashboard with gradebook CSV export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -20,3 +20,7 @@ export default defineConfig(() => {
     },
   };
 });
+export default defineConfig({
+  base: '/TypeCarnival/',
+  // ...rest of your existing config
+})

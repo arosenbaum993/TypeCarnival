@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode, useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/Navbar';
 import { MidwayMap } from './components/MidwayMap';
@@ -6,6 +6,8 @@ import { TypingArena } from './components/TypingArena';
 import { MinigameHub } from './components/Minigames/MinigameHub';
 import { PrizeBooth } from './components/PrizeBooth';
 import { TeacherDashboard } from './components/Teacher/TeacherDashboard';
+import { TeacherPinGate } from './components/Teacher/TeacherPinGate';
+import { AddStudentModal } from './components/Teacher/AddStudentModal';
 import { RotateCcw } from 'lucide-react';
 
 interface ErrorBoundaryProps {
@@ -31,10 +33,16 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     console.error('TypeCarnival Error caught:', error, errorInfo);
   }
 
+  handleReload = () => {
+    window.location.reload();
+  };
+
   handleReset = () => {
+    if (!window.confirm('This erases every student\'s tickets and progress saved on this device. Continue?')) return;
     try {
-      localStorage.removeItem('typecarnival_students_v1');
-      localStorage.removeItem('typecarnival_goal_v1');
+      localStorage.removeItem('typecarnival_students_v3');
+      localStorage.removeItem('typecarnival_goal_v3');
+      localStorage.removeItem('typecarnival_active_student_v3');
       localStorage.removeItem('typecarnival_sound_muted');
     } catch {
       // ignore
@@ -54,7 +62,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               TypeCarnival Refresh
             </h1>
             <p className="text-xs text-slate-600 mt-2 mb-4 leading-relaxed">
-              We encountered a bump on the midway track. Click below to clear stored cache and relaunch the carnival!
+              We encountered a bump on the midway track. Click below to reload the carnival. Your tickets and progress are still saved.
             </p>
             {this.state.errorMessage && (
               <div className="mb-6 p-2 bg-rose-50 border border-rose-200 rounded-lg text-[11px] font-mono text-rose-800 text-left overflow-x-auto">
@@ -62,11 +70,17 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               </div>
             )}
             <button
-              onClick={this.handleReset}
+              onClick={this.handleReload}
               className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-amber-950 rounded-xl font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-2"
             >
               <RotateCcw className="w-4 h-4" />
-              Reset &amp; Enter Carnival
+              Reload Carnival
+            </button>
+            <button
+              onClick={this.handleReset}
+              className="mt-3 text-[11px] text-slate-400 hover:text-rose-600 underline"
+            >
+              Still broken? Teachers: clear saved data on this device
             </button>
           </div>
         </div>
@@ -77,8 +91,43 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
+// Mounted only while Teacher Command is open, so leaving it locks it again.
+const TeacherArea: React.FC = () => {
+  const { setCurrentView } = useApp();
+  const [unlocked, setUnlocked] = useState(false);
+
+  if (!unlocked) {
+    return <TeacherPinGate onUnlock={() => setUnlocked(true)} onCancel={() => setCurrentView('midway')} />;
+  }
+  return <TeacherDashboard />;
+};
+
 const MainContent: React.FC = () => {
-  const { currentView } = useApp();
+  const { currentView, students, addStudent } = useApp();
+
+  if (currentView === 'teacher') {
+    return (
+      <main className="flex-1">
+        <TeacherArea />
+      </main>
+    );
+  }
+
+  if (students.length === 0) {
+    return (
+      <main className="flex-1">
+        <AddStudentModal
+          isOpen
+          required
+          onClose={() => {}}
+          onAdd={addStudent}
+          title="Welcome to TypeCarnival!"
+          subtitle="Type your name to make your typist"
+          submitLabel="Let's Go!"
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1">
@@ -86,7 +135,6 @@ const MainContent: React.FC = () => {
       {currentView === 'lesson' && <TypingArena />}
       {currentView === 'minigames' && <MinigameHub />}
       {currentView === 'prizes' && <PrizeBooth />}
-      {currentView === 'teacher' && <TeacherDashboard />}
     </main>
   );
 };

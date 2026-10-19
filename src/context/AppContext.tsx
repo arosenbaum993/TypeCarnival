@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Student, Lesson, TypingSession, ClassGoal, AppView, MinigameType, GradeLevel } from '../types';
-import { INITIAL_STUDENTS, DEFAULT_CLASS_GOAL } from '../data/defaultRoster';
+import { DEFAULT_CLASS_GOAL } from '../data/defaultRoster';
 import { LESSONS, generateStruggleKeyDrill } from '../data/lessons';
 import { useArcadeAudio, ArcadeAudioControls } from '../hooks/useArcadeAudio';
+import { syncSessionToSheet } from '../utils/sheetsSync';
 
 interface AppContextType {
   currentView: AppView;
@@ -26,14 +27,31 @@ interface AppContextType {
   unlockPrize: (studentId: string, prizeId: string, cost: number) => boolean;
   setStudentTheme: (studentId: string, themeId: string) => void;
   addStudent: (name: string, grade: GradeLevel, avatar: string) => Student;
+  removeStudent: (studentId: string) => void;
   updateClassGoal: (newGoal: Partial<ClassGoal>) => void;
-  resetRosterToDefault: () => void;
+  clearRoster: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_KEY_STUDENTS = 'typecarnival_students_v2';
-const STORAGE_KEY_GOAL = 'typecarnival_goal_v2';
+const STORAGE_KEY_STUDENTS = 'typecarnival_students_v3';
+const STORAGE_KEY_GOAL = 'typecarnival_goal_v3';
+const STORAGE_KEY_ACTIVE = 'typecarnival_active_student_v3';
+
+// Stand-in used only while the roster is empty; App shows the sign-up screen instead of any student view.
+const EMPTY_STUDENT: Student = {
+  id: '',
+  name: '',
+  grade: 'Grade 3',
+  avatar: '🦊',
+  totalTickets: 0,
+  currentLevelId: 'lesson-1',
+  unlockedPrizes: ['theme-classic'],
+  activeTheme: 'theme-classic',
+  sessions: [],
+  lastActive: '',
+  dailyStreak: 0,
+};
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentView, setCurrentView] = useState<AppView>('midway');
@@ -51,7 +69,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const saved = localStorage.getItem(STORAGE_KEY_STUDENTS);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          if (Array.isArray(parsed)) {
             return parsed.map((s: Partial<Student>) => ({
               id: s.id || `student-${Date.now()}`,
               name: s.name || 'Student',
@@ -87,12 +105,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {
       // ignore
     }
-    return INITIAL_STUDENTS;
+    return [];
   });
 
   const [activeStudentId, setActiveStudentId] = useState<string>(() => {
-    return students[0]?.id || 'student-1';
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_ACTIVE);
+      if (saved && students.some(s => s.id === saved)) return saved;
+    } catch {
+      // ignore
+    }
+    return students[0]?.id || '';
   });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_ACTIVE, activeStudentId);
+    } catch {
+      // ignore
+    }
+  }, [activeStudentId]);
 
   const [classGoal, setClassGoal] = useState<ClassGoal>(() => {
     try {
@@ -124,7 +156,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [classGoal]);
 
-  const activeStudent = students.find(s => s.id === activeStudentId) || students[0] || INITIAL_STUDENTS[0];
+  const activeStudent = students.find(s => s.id === activeStudentId) || students[0] || EMPTY_STUDENT;
 
   const toggleSound = () => {
     const muted = audio.toggleMute();
@@ -162,15 +194,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const recordSession = (studentId: string, sessionData: Omit<TypingSession, 'id' | 'completedAt'>) => {
+    const newSession: TypingSession = {
+      ...sessionData,
+      id: `sess-${Date.now()}`,
+      completedAt: new Date().toISOString(),
+    };
+
+    const sessionStudent = students.find(s => s.id === studentId);
+    if (sessionStudent) {
+      const lesson = LESSONS.find(l => l.id === sessionData.lessonId);
+      syncSessionToSheet(sessionStudent, newSession, lesson?.requiredAccuracy ?? 90);
+    }
+
     setStudents(prev => {
       return prev.map(student => {
         if (student.id !== studentId) return student;
-
-        const newSession: TypingSession = {
-          ...sessionData,
-          id: `sess-${Date.now()}`,
-          completedAt: new Date().toISOString(),
-        };
 
         // Calculate if we should advance to the next level
         let newLevelId = student.currentLevelId;
@@ -291,12 +329,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  const resetRosterToDefault = () => {
-    setStudents(INITIAL_STUDENTS);
-    setActiveStudentId(INITIAL_STUDENTS[0].id);
+  const removeStudent = (studentId: string) => {
+    const remaining = students.filter(s => s.id !== studentId);
+    setStudents(remaining);
+    if (activeStudentId === studentId) {
+      setActiveStudentId(remaining[0]?.id || '');
+    }
+  };
+
+  const clearRoster = () => {
+    setStudents([]);
+    setActiveStudentId('');
     setClassGoal(DEFAULT_CLASS_GOAL);
-    localStorage.removeItem(STORAGE_KEY_STUDENTS);
-    localStorage.removeItem(STORAGE_KEY_GOAL);
   };
 
   return (
@@ -323,8 +367,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         unlockPrize,
         setStudentTheme,
         addStudent,
+        removeStudent,
         updateClassGoal,
-        resetRosterToDefault,
+        clearRoster,
       }}
     >
       {children}

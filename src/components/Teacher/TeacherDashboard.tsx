@@ -5,6 +5,8 @@ import { StudentDrawer } from './StudentDrawer';
 import { GoalModal } from './GoalModal';
 import { AddStudentModal } from './AddStudentModal';
 import { LESSONS } from '../../data/lessons';
+import { setTeacherPin } from '../../utils/teacherPin';
+import { postToSheet } from '../../utils/sheetsSync';
 import {
   Download,
   Plus,
@@ -18,6 +20,9 @@ import {
   AlertTriangle,
   ArrowUpRight,
   TrendingUp,
+  Trash2,
+  KeyRound,
+  Sheet,
 } from 'lucide-react';
 
 export const TeacherDashboard: React.FC = () => {
@@ -26,7 +31,8 @@ export const TeacherDashboard: React.FC = () => {
     classGoal,
     updateClassGoal,
     addStudent,
-    resetRosterToDefault,
+    clearRoster,
+    removeStudent,
     setActiveStudentId,
     setCurrentView,
   } = useApp();
@@ -154,6 +160,43 @@ export const TeacherDashboard: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleRemoveStudent = (student: Student) => {
+    if (window.confirm(`Remove ${student.name} and all of their progress from this device? This cannot be undone.`)) {
+      removeStudent(student.id);
+    }
+  };
+
+  const handleChangePin = async () => {
+    const pin = window.prompt('Enter a new teacher PIN for this device (4 to 12 digits):');
+    if (pin === null) return;
+    if (!/^\d{4,12}$/.test(pin.trim())) {
+      window.alert('PIN must be 4 to 12 digits. Your PIN was not changed.');
+      return;
+    }
+    if (window.prompt('Type the new PIN again to confirm:') !== pin) {
+      window.alert('The PINs did not match. Your PIN was not changed.');
+      return;
+    }
+    await setTeacherPin(pin);
+    window.alert('Teacher PIN updated on this device.');
+  };
+
+  const handleTestSync = () => {
+    postToSheet({
+      timestamp: new Date().toISOString(),
+      studentName: 'TEST ROW (delete me)',
+      grade: '',
+      activity: 'Sheet connection test',
+      wpm: '',
+      accuracy: '',
+      durationSeconds: '',
+      ticketsEarned: '',
+      struggleKeys: '',
+      passed: '',
+    });
+    window.alert('Test row sent. Open your Google Sheet: a row named "TEST ROW (delete me)" should appear within a few seconds.');
+  };
+
   const handleSwitchToStudent = (studentId: string) => {
     setActiveStudentId(studentId);
     setCurrentView('midway');
@@ -194,13 +237,28 @@ export const TeacherDashboard: React.FC = () => {
             Export CSV Report
           </button>
           <button
+            onClick={handleTestSync}
+            className="px-3.5 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 whitespace-nowrap"
+            title="Send a test row to the class Google Sheet"
+          >
+            <Sheet className="w-4 h-4" />
+            Test Sheet Sync
+          </button>
+          <button
+            onClick={handleChangePin}
+            className="p-2 text-slate-500 hover:text-amber-700 hover:bg-amber-50 rounded-xl border border-slate-200 transition-colors"
+            title="Change Teacher PIN"
+          >
+            <KeyRound className="w-4 h-4" />
+          </button>
+          <button
             onClick={() => {
-              if (window.confirm('Reset student roster back to default demo data?')) {
-                resetRosterToDefault();
+              if (window.confirm('Remove ALL students and their progress from this device? This cannot be undone.')) {
+                clearRoster();
               }
             }}
             className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-200 transition-colors"
-            title="Reset Demo Data"
+            title="Clear Roster on This Device"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -496,6 +554,14 @@ export const TeacherDashboard: React.FC = () => {
                           >
                             <ArrowUpRight className="w-3.5 h-3.5 text-amber-700" />
                             View
+                          </button>
+                          <button
+                            onClick={() => handleRemoveStudent(student)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            title={`Remove ${student.name}`}
+                            aria-label={`Remove ${student.name}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>

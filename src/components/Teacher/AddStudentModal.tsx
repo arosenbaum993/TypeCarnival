@@ -6,6 +6,11 @@ interface AddStudentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (name: string, grade: GradeLevel, avatar: string) => void;
+  title?: string;
+  subtitle?: string;
+  submitLabel?: string;
+  // Hides Cancel/close for the first-run screen, where there is nothing to go back to.
+  required?: boolean;
 }
 
 const AVATAR_OPTIONS = ['🦊', '🦁', '🐯', '🐼', '🐨', '🦄', '🚀', '⭐', '🦖', '🤖'];
@@ -14,6 +19,10 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
   isOpen,
   onClose,
   onAdd,
+  title = 'Enroll New Student',
+  subtitle = 'Add a student to your active class roster',
+  submitLabel = 'Add Student',
+  required = false,
 }) => {
   const [name, setName] = useState('');
   const [grade, setGrade] = useState<GradeLevel>('Grade 3');
@@ -39,27 +48,29 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
             </div>
             <div>
               <h2 className="font-display text-lg font-bold text-slate-900">
-                Enroll New Student
+                {title}
               </h2>
-              <p className="text-xs text-slate-500">Add a student to your active class roster</p>
+              <p className="text-xs text-slate-500">{subtitle}</p>
             </div>
           </div>
-          <button
+          {!required && <button
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
           >
             <X className="w-5 h-5" />
-          </button>
+          </button>}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Student Full Name
+              First Name &amp; Last Initial
             </label>
             <input
               type="text"
-              placeholder="e.g. Jordan Smith"
+              placeholder="e.g. Jordan S."
+              maxLength={40}
+              autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-amber-400 outline-none"
@@ -106,19 +117,19 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
           </div>
 
           <div className="pt-4 border-t border-slate-100 flex gap-3">
-            <button
+            {!required && <button
               type="button"
               onClick={onClose}
               className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors"
             >
               Cancel
-            </button>
+            </button>}
             <button
               type="submit"
               className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5"
             >
               <Check className="w-4 h-4" />
-              Add Student
+              {submitLabel}
             </button>
           </div>
         </form>

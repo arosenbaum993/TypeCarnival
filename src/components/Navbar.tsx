@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Volume2, VolumeX, Ticket, User, GraduationCap } from 'lucide-react';
+import { Volume2, VolumeX, Ticket, GraduationCap } from 'lucide-react';
+import { AddStudentModal } from './Teacher/AddStudentModal';
+
+const NEW_TYPIST = '__new__';
 
 export const Navbar: React.FC = () => {
   const {
@@ -12,7 +15,9 @@ export const Navbar: React.FC = () => {
     students,
     soundMuted,
     toggleSound,
+    addStudent,
   } = useApp();
+  const [isJoinOpen, setIsJoinOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-amber-200 shadow-xs">
@@ -83,7 +88,13 @@ export const Navbar: React.FC = () => {
               <span className="text-base">{activeStudent?.avatar || '🦊'}</span>
               <select
                 value={activeStudentId}
-                onChange={(e) => setActiveStudentId(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value === NEW_TYPIST) {
+                    setIsJoinOpen(true);
+                  } else {
+                    setActiveStudentId(e.target.value);
+                  }
+                }}
                 className="bg-transparent font-medium text-slate-800 border-none outline-none cursor-pointer max-w-[110px] truncate"
                 aria-label="Active Student"
               >
@@ -92,6 +103,7 @@ export const Navbar: React.FC = () => {
                     {student.name} ({student.grade})
                   </option>
                 ))}
+                <option value={NEW_TYPIST}>+ I'm new here</option>
               </select>
             </div>
 
@@ -140,6 +152,17 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
       </div>
+      <AddStudentModal
+        isOpen={isJoinOpen}
+        onClose={() => setIsJoinOpen(false)}
+        onAdd={(name, grade, avatar) => {
+          addStudent(name, grade, avatar);
+          setCurrentView('midway');
+        }}
+        title="Join the Carnival"
+        subtitle="Type your name to make your typist"
+        submitLabel="Let's Go!"
+      />
     </header>
   );
 };

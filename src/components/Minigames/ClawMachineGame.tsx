@@ -141,7 +141,7 @@ export const ClawMachineGame: React.FC<{ onBack: () => void }> = ({ onBack }) =>
         <div className="bg-slate-900 rounded-3xl p-4 border-4 border-amber-400 shadow-xl flex flex-col justify-between text-white">
           <div className="rounded-2xl overflow-hidden border-2 border-amber-300/40 relative h-48 mb-4">
             <img
-              src="/src/assets/images/carnival_claw_machine_1792163243612.jpg"
+              src={`${import.meta.env.BASE_URL}images/carnival_claw_machine_1792163243612.jpg`}
               alt="Arcade Claw Machine"
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover"

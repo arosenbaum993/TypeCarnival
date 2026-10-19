@@ -41,7 +41,7 @@ export const PrizeBooth: React.FC = () => {
       <div className="relative rounded-3xl overflow-hidden shadow-xl border-4 border-amber-300 bg-amber-950">
         <div className="absolute inset-0">
           <img
-            src="/src/assets/images/carnival_ticket_booth_1792163244013.jpg"
+            src={`${import.meta.env.BASE_URL}images/carnival_ticket_booth_1792163244013.jpg`}
             alt="Carnival Prize Booth"
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover opacity-65 mix-blend-luminosity brightness-90"

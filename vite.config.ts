@@ -5,6 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
+    base: '/TypeCarnival/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
@@ -20,7 +21,3 @@ export default defineConfig(() => {
     },
   };
 });
-export default defineConfig({
-  base: '/TypeCarnival/',
-  // ...rest of your existing config
-})

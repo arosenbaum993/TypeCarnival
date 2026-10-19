@@ -38,7 +38,7 @@ export const MidwayMap: React.FC = () => {
       <div className="relative rounded-3xl overflow-hidden shadow-xl border-4 border-amber-300 bg-amber-950">
         <div className="absolute inset-0">
           <img
-            src="/src/assets/images/carnival_midway_banner_1792163243402.jpg"
+            src={`${import.meta.env.BASE_URL}images/carnival_midway_banner_1792163243402.jpg`}
             alt="Carnival Midway Arcade Banner"
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover opacity-60 mix-blend-luminosity brightness-90"

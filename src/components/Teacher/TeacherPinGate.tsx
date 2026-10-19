@@ -11,9 +11,9 @@ export const TeacherPinGate: React.FC<TeacherPinGateProps> = ({ onUnlock, onCanc
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (await checkTeacherPin(pin)) {
+    if (checkTeacherPin(pin)) {
       onUnlock();
     } else {
       setError('That PIN is not right. Try again.');

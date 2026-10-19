@@ -177,7 +177,7 @@ export const TeacherDashboard: React.FC = () => {
       window.alert('The PINs did not match. Your PIN was not changed.');
       return;
     }
-    await setTeacherPin(pin);
+    setTeacherPin(pin);
     window.alert('Teacher PIN updated on this device.');
   };
 

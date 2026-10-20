@@ -7,6 +7,19 @@ import { AddStudentModal } from './AddStudentModal';
 import { LESSONS } from '../../data/lessons';
 import { setTeacherPin } from '../../utils/teacherPin';
 import { postToSheet } from '../../utils/sheetsSync';
+import { parseSpeedTestLessonId, rateResult } from '../../data/speedTest';
+import { TypingSession } from '../../types';
+
+// Arcade games score differently from lessons, so they stay out of WPM and accuracy averages.
+const isTypingWork = (s: TypingSession) => !s.lessonId.startsWith('game-');
+
+const latestSpeedTest = (st: Student) => {
+  const sess = st.sessions.find(s => s.lessonId.startsWith('speed-test-'));
+  if (!sess) return null;
+  const parsed = parseSpeedTestLessonId(sess.lessonId);
+  if (!parsed) return null;
+  return { sess, ...parsed, rating: rateResult(parsed.level, sess.wpm, sess.accuracy) };
+};
 import {
   Download,
   Plus,
@@ -68,10 +81,12 @@ export const TeacherDashboard: React.FC = () => {
 
     list.forEach((st) => {
       (st.sessions || []).forEach((sess) => {
-        totalWpm += sess.wpm || 0;
-        totalAcc += sess.accuracy || 0;
         totalSecs += sess.durationSeconds || 0;
-        validSessionCount += 1;
+        if (isTypingWork(sess)) {
+          totalWpm += sess.wpm || 0;
+          totalAcc += sess.accuracy || 0;
+          validSessionCount += 1;
+        }
 
         (sess.struggleKeys || []).forEach((k) => {
           const lower = k.toLowerCase();
@@ -113,6 +128,9 @@ export const TeacherDashboard: React.FC = () => {
       'Current Level',
       'Average WPM',
       'Average Accuracy (%)',
+      'Latest Speed Test WPM',
+      'Latest Speed Test Accuracy (%)',
+      'Speed Test Details',
       'Sessions Completed',
       'Total Practice Time (Minutes)',
       'Total Tickets Won',
@@ -122,8 +140,10 @@ export const TeacherDashboard: React.FC = () => {
 
     const rows = filteredStudents.map((st) => {
       const sessCount = st.sessions.length;
-      const stAvgWpm = sessCount > 0 ? Math.round(st.sessions.reduce((a, b) => a + b.wpm, 0) / sessCount) : 0;
-      const stAvgAcc = sessCount > 0 ? Math.round(st.sessions.reduce((a, b) => a + b.accuracy, 0) / sessCount) : 0;
+      const work = st.sessions.filter(isTypingWork);
+      const stAvgWpm = work.length > 0 ? Math.round(work.reduce((a, b) => a + b.wpm, 0) / work.length) : 0;
+      const stAvgAcc = work.length > 0 ? Math.round(work.reduce((a, b) => a + b.accuracy, 0) / work.length) : 0;
+      const test = latestSpeedTest(st);
       const stMinutes = Math.round(st.sessions.reduce((a, b) => a + b.durationSeconds, 0) / 60);
 
       // Extract unique struggle keys
@@ -140,6 +160,9 @@ export const TeacherDashboard: React.FC = () => {
         `"${currentLesson.replace(/"/g, '""')}"`,
         stAvgWpm,
         stAvgAcc,
+        test ? test.sess.wpm : '',
+        test ? test.sess.accuracy : '',
+        test ? `"${test.minutes} min, ${test.level.name} text, ${new Date(test.sess.completedAt).toLocaleDateString()}"` : '',
         sessCount,
         stMinutes,
         st.totalTickets,
@@ -424,6 +447,7 @@ export const TeacherDashboard: React.FC = () => {
                 <th className="py-3.5 px-3">Current Lesson</th>
                 <th className="py-3.5 px-3 text-right">Avg Speed</th>
                 <th className="py-3.5 px-3 text-right">Accuracy</th>
+                <th className="py-3.5 px-3 text-right">Speed Test</th>
                 <th className="py-3.5 px-3 text-right">Sessions</th>
                 <th className="py-3.5 px-3 text-right">Practice</th>
                 <th className="py-3.5 px-3 text-right">Tickets</th>
@@ -434,15 +458,17 @@ export const TeacherDashboard: React.FC = () => {
             <tbody className="divide-y divide-slate-100 font-medium">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-400">
+                  <td colSpan={11} className="py-12 text-center text-slate-400">
                     No students match the selected filter.
                   </td>
                 </tr>
               ) : (
                 filteredStudents.map((student) => {
                   const sessCount = student.sessions.length;
-                  const stAvgWpm = sessCount > 0 ? Math.round(student.sessions.reduce((a, b) => a + b.wpm, 0) / sessCount) : 0;
-                  const stAvgAcc = sessCount > 0 ? Math.round(student.sessions.reduce((a, b) => a + b.accuracy, 0) / sessCount) : 0;
+                  const work = student.sessions.filter(isTypingWork);
+                  const stAvgWpm = work.length > 0 ? Math.round(work.reduce((a, b) => a + b.wpm, 0) / work.length) : 0;
+                  const stAvgAcc = work.length > 0 ? Math.round(work.reduce((a, b) => a + b.accuracy, 0) / work.length) : 0;
+                  const test = latestSpeedTest(student);
                   const stMinutes = Math.round(student.sessions.reduce((a, b) => a + b.durationSeconds, 0) / 60);
 
                   const uniqueStruggles = Array.from(
@@ -503,6 +529,32 @@ export const TeacherDashboard: React.FC = () => {
                         >
                           {stAvgAcc}%
                         </span>
+                      </td>
+
+                      {/* Latest speed test */}
+                      <td className="py-3 px-3 text-right">
+                        {test ? (
+                          <span
+                            className="inline-flex items-center gap-1.5 font-mono font-bold tabular-nums"
+                            title={`${test.minutes} min, ${test.level.name} text, ${new Date(test.sess.completedAt).toLocaleDateString()}: ${test.rating.message}`}
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                test.rating.band === 'strong'
+                                  ? 'bg-emerald-500'
+                                  : test.rating.band === 'on-track'
+                                    ? 'bg-sky-500'
+                                    : test.rating.band === 'developing'
+                                      ? 'bg-amber-500'
+                                      : 'bg-rose-500'
+                              }`}
+                            />
+                            {test.sess.wpm}
+                            <span className="text-[10px] font-normal text-slate-400">WPM · {test.sess.accuracy}%</span>
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">Not yet</span>
+                        )}
                       </td>
 
                       {/* Sessions */}

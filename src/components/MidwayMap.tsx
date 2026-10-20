@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { LESSONS } from '../data/lessons';
-import { Ticket, Sparkles, Lock, CheckCircle, ArrowRight, Play, Gamepad2, Award } from 'lucide-react';
+import { Ticket, Sparkles, Lock, CheckCircle, ArrowRight, Play, Gamepad2, Award, Star, Timer } from 'lucide-react';
 
 export const MidwayMap: React.FC = () => {
   const {
@@ -31,6 +31,18 @@ export const MidwayMap: React.FC = () => {
         .filter((k): k is string => typeof k === 'string' && k.length > 0)
     )
   );
+
+  // Stars per tent from the best accuracy on record: 1 = passed, 2 = 94%+, 3 = 97%+
+  const starsFor = (lessonId: string, required: number) => {
+    const best = studentSessions
+      .filter(s => s?.lessonId === lessonId)
+      .reduce((b, s) => Math.max(b, s.accuracy || 0), 0);
+    if (best >= 97) return 3;
+    if (best >= 94) return 2;
+    if (best >= required) return 1;
+    return 0;
+  };
+  const totalStars = LESSONS.reduce((sum, l) => sum + starsFor(l.id, l.requiredAccuracy), 0);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -188,13 +200,26 @@ export const MidwayMap: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setCurrentView('minigames')}
-          className="self-start sm:self-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-2"
-        >
-          <Gamepad2 className="w-4 h-4" />
-          Play Arcade Games
-        </button>
+        <div className="self-start sm:self-auto flex flex-wrap items-center gap-2">
+          <span className="px-3 py-2 bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs rounded-xl flex items-center gap-1.5">
+            <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
+            {totalStars}/{LESSONS.length * 3} stars
+          </span>
+          <button
+            onClick={() => setCurrentView('speedtest')}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-2"
+          >
+            <Timer className="w-4 h-4" />
+            Speed Test
+          </button>
+          <button
+            onClick={() => setCurrentView('minigames')}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-2"
+          >
+            <Gamepad2 className="w-4 h-4" />
+            Play Arcade Games
+          </button>
+        </div>
       </div>
 
       {/* Carnival Tents Grid */}
@@ -203,6 +228,7 @@ export const MidwayMap: React.FC = () => {
           const isCompleted = idx < activeLevelIdx;
           const isCurrent = idx === activeLevelIdx;
           const isLocked = idx > activeLevelIdx;
+          const stars = starsFor(lesson.id, lesson.requiredAccuracy);
 
           return (
             <div
@@ -250,6 +276,17 @@ export const MidwayMap: React.FC = () => {
                   </span>
                 )}
               </div>
+
+              {!isLocked && (
+                <div className="flex items-center gap-1 -mt-2 mb-3" title="1 star: pass. 2 stars: 94% accuracy. 3 stars: 97% accuracy.">
+                  {[0, 1, 2].map(i => (
+                    <Star key={i} className={`w-4 h-4 ${i < stars ? 'fill-amber-400 text-amber-500' : 'text-slate-300'}`} />
+                  ))}
+                  <span className="text-[10px] text-slate-400 ml-1">
+                    {stars === 3 ? 'Perfect!' : stars === 0 ? 'Pass for 1 star, 97% for 3' : `${97}% accuracy for 3 stars`}
+                  </span>
+                </div>
+              )}
 
               {/* Subtitle / Description */}
               <p className="text-xs text-slate-600 mb-4 leading-relaxed">

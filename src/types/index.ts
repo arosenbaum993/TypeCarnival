@@ -12,6 +12,7 @@ export interface TypingSession {
   totalKeystrokes: number;
   errorKeystrokes: number;
   completedAt: string;
+  score?: number; // arcade games and speed tests: the game's own score for personal bests
 }
 
 export interface Student {
@@ -84,5 +85,6 @@ export interface PrizeItem {
   previewColor?: string;
 }
 
-export type AppView = 'midway' | 'lesson' | 'minigames' | 'prizes' | 'teacher';
-export type MinigameType = 'balloons' | 'tickets' | 'claw';
+export type AppView = 'midway' | 'lesson' | 'minigames' | 'prizes' | 'teacher' | 'speedtest';
+// Arcade game ids live in src/data/games.ts
+export type MinigameType = string;

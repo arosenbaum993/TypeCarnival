@@ -5,6 +5,7 @@ import { MidwayMap } from './components/MidwayMap';
 import { TypingArena } from './components/TypingArena';
 import { MinigameHub } from './components/Minigames/MinigameHub';
 import { PrizeBooth } from './components/PrizeBooth';
+import { SpeedTest } from './components/SpeedTest';
 import { TeacherDashboard } from './components/Teacher/TeacherDashboard';
 import { TeacherPinGate } from './components/Teacher/TeacherPinGate';
 import { AddStudentModal } from './components/Teacher/AddStudentModal';
@@ -135,6 +136,7 @@ const MainContent: React.FC = () => {
       {currentView === 'lesson' && <TypingArena />}
       {currentView === 'minigames' && <MinigameHub />}
       {currentView === 'prizes' && <PrizeBooth />}
+      {currentView === 'speedtest' && <SpeedTest />}
     </main>
   );
 };

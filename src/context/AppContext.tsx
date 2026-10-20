@@ -4,6 +4,7 @@ import { DEFAULT_CLASS_GOAL } from '../data/defaultRoster';
 import { LESSONS, generateStruggleKeyDrill } from '../data/lessons';
 import { useArcadeAudio, ArcadeAudioControls } from '../hooks/useArcadeAudio';
 import { syncSessionToSheet } from '../utils/sheetsSync';
+import { parseSpeedTestLessonId } from '../data/speedTest';
 
 interface AppContextType {
   currentView: AppView;
@@ -96,6 +97,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     totalKeystrokes: sess.totalKeystrokes || 100,
                     errorKeystrokes: sess.errorKeystrokes || 5,
                     completedAt: sess.completedAt || new Date().toISOString(),
+                    ...(typeof sess.score === 'number' ? { score: sess.score } : {}),
                   }))
                 : [],
             }));
@@ -203,7 +205,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const sessionStudent = students.find(s => s.id === studentId);
     if (sessionStudent) {
       const lesson = LESSONS.find(l => l.id === sessionData.lessonId);
-      syncSessionToSheet(sessionStudent, newSession, lesson?.requiredAccuracy ?? 90);
+      const requiredAccuracy =
+        lesson?.requiredAccuracy ?? parseSpeedTestLessonId(sessionData.lessonId)?.level.targetAccuracy ?? 90;
+      syncSessionToSheet(sessionStudent, newSession, requiredAccuracy);
     }
 
     setStudents(prev => {

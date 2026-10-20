@@ -37,7 +37,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Zone 2: 4 clean single-line text navigation links */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
+          <nav className="hidden lg:flex items-center gap-6 text-sm font-semibold">
             <button
               onClick={() => setCurrentView('midway')}
               className={`whitespace-nowrap transition-colors pb-1 border-b-2 ${
@@ -59,6 +59,16 @@ export const Navbar: React.FC = () => {
               Arcade Games
             </button>
             <button
+              onClick={() => setCurrentView('speedtest')}
+              className={`whitespace-nowrap transition-colors pb-1 border-b-2 ${
+                currentView === 'speedtest'
+                  ? 'border-rose-600 text-rose-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Speed Test
+            </button>
+            <button
               onClick={() => setCurrentView('prizes')}
               className={`whitespace-nowrap transition-colors pb-1 border-b-2 ${
                 currentView === 'prizes'
@@ -68,18 +78,7 @@ export const Navbar: React.FC = () => {
             >
               Prize Booth
             </button>
-            <button
-              onClick={() => setCurrentView('teacher')}
-              className={`whitespace-nowrap flex items-center gap-1.5 transition-colors pb-1 border-b-2 ${
-                currentView === 'teacher'
-                  ? 'border-amber-600 text-amber-800'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <GraduationCap className="w-4 h-4 text-amber-600" />
-              Teacher Command
-            </button>
-          </nav>
+</nav>
 
           {/* Zone 3: 1 Primary Area (Student Switcher, Ticket Balance, Sound) */}
           <div className="flex items-center gap-3 shrink-0">

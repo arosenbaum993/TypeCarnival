@@ -9,4 +9,6 @@ export const DEFAULT_TEACHER_PIN_HASH = '29b98b4e5f3b1fab32dc49b77a9f8998ac9aa93
 // Published CSV of the class roster (Name and Grade columns), from a Google Sheet's
 // File > Share > Publish to web. Leave empty to turn shared rosters off. VITE_ROSTER_SHEET_URL
 // overrides it for local testing.
-export const ROSTER_SHEET_URL: string = (import.meta.env.VITE_ROSTER_SHEET_URL as string | undefined) || '';
+export const ROSTER_SHEET_URL: string =
+  (import.meta.env.VITE_ROSTER_SHEET_URL as string | undefined) ||
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSDDX4uE6PL-AWg7HHHh7xNOomFApig30fHHZe7FKMAkDDJy_ubDxB6X3Aoaep5iVonXWiqIA3Of7Ax/pub?gid=1994845947&single=true&output=csv';

@@ -8,7 +8,12 @@ export const sharedRosterEnabled = (): boolean => ROSTER_SHEET_URL !== '';
 // Reads the published sheet and keeps only usable rows (Grades 2 to 5, no repeats, valid names).
 // A sheet that is not published returns a web page instead of CSV, which fails the heading check.
 export const fetchSharedRoster = async (): Promise<RosterEntry[]> => {
-  const res = await fetch(ROSTER_SHEET_URL, { cache: 'no-store' });
+  let res: Response;
+  try {
+    res = await fetch(ROSTER_SHEET_URL, { cache: 'no-store' });
+  } catch {
+    throw new Error('Could not reach the roster sheet. Check the internet connection and that the sheet is still published.');
+  }
   if (!res.ok) throw new Error(`The roster sheet could not be reached (error ${res.status}).`);
   const text = await res.text();
   let entries: RosterEntry[];

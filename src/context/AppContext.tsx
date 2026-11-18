@@ -5,6 +5,8 @@ import { LESSONS, generateStruggleKeyDrill } from '../data/lessons';
 import { useArcadeAudio, ArcadeAudioControls } from '../hooks/useArcadeAudio';
 import { syncSessionToSheet } from '../utils/sheetsSync';
 import { parseSpeedTestLessonId } from '../data/speedTest';
+import { RosterEntry } from '../utils/rosterImport';
+import { fetchSharedRoster, loadCachedRoster, saveCachedRoster, sharedRosterEnabled } from '../utils/sharedRoster';
 
 interface AppContextType {
   currentView: AppView;
@@ -32,6 +34,10 @@ interface AppContextType {
   removeStudent: (studentId: string) => void;
   updateClassGoal: (newGoal: Partial<ClassGoal>) => void;
   clearRoster: () => void;
+  sharedRoster: RosterEntry[];
+  rosterStatus: 'off' | 'loading' | 'ready' | 'error';
+  refreshSharedRoster: () => Promise<number>;
+  signInFromRoster: (entry: RosterEntry, avatar: string) => Student;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -61,6 +67,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     typeof window !== 'undefined' && window.location.hash === '#teacher' ? 'teacher' : 'midway',
   );
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+
+  // Class list from the shared Google Sheet. It only fills the "find your name" screen: a student
+  // record is created on this device when someone picks their name, so progress stays per device.
+  const [sharedRoster, setSharedRoster] = useState<RosterEntry[]>(() => (sharedRosterEnabled() ? loadCachedRoster() : []));
+  const [rosterStatus, setRosterStatus] = useState<'off' | 'loading' | 'ready' | 'error'>(() =>
+    !sharedRosterEnabled() ? 'off' : loadCachedRoster().length > 0 ? 'ready' : 'loading',
+  );
+
+  const refreshSharedRoster = async (): Promise<number> => {
+    const entries = await fetchSharedRoster();
+    saveCachedRoster(entries);
+    setSharedRoster(entries);
+    setRosterStatus('ready');
+    return entries.length;
+  };
+
+  useEffect(() => {
+    if (!sharedRosterEnabled()) return;
+    refreshSharedRoster().catch(() => {
+      // keep a cached list if there is one; otherwise the typed sign-up form takes over
+      setRosterStatus(prev => (prev === 'ready' ? 'ready' : 'error'));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const onHashChange = () => {
@@ -372,6 +402,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return created.length;
   };
 
+  // Picking a name from the class list: reuse this device's record for that student if there is one.
+  const signInFromRoster = (entry: RosterEntry, avatar: string): Student => {
+    const existing = students.find(
+      s => s.grade === entry.grade && s.name.toLowerCase() === entry.name.toLowerCase(),
+    );
+    if (existing) {
+      setActiveStudentId(existing.id);
+      return existing;
+    }
+    return addStudent(entry.name, entry.grade, avatar);
+  };
+
   const updateClassGoal = (newGoal: Partial<ClassGoal>) => {
     setClassGoal(prev => ({
       ...prev,
@@ -421,6 +463,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         removeStudent,
         updateClassGoal,
         clearRoster,
+        sharedRoster,
+        rosterStatus,
+        refreshSharedRoster,
+        signInFromRoster,
       }}
     >
       {children}

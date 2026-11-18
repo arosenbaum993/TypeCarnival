@@ -5,3 +5,8 @@ export const SHEETS_SYNC_URL =
 
 // SHA-256 hash of the default Teacher View PIN. Teachers can set a new PIN per device in Teacher Command.
 export const DEFAULT_TEACHER_PIN_HASH = '29b98b4e5f3b1fab32dc49b77a9f8998ac9aa9367fcca094d5fab526aa2ff5b9';
+
+// Published CSV of the class roster (Name and Grade columns), from a Google Sheet's
+// File > Share > Publish to web. Leave empty to turn shared rosters off. VITE_ROSTER_SHEET_URL
+// overrides it for local testing.
+export const ROSTER_SHEET_URL: string = (import.meta.env.VITE_ROSTER_SHEET_URL as string | undefined) || '';

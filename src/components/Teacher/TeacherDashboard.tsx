@@ -8,6 +8,7 @@ import { ImportRosterModal } from './ImportRosterModal';
 import { LESSONS } from '../../data/lessons';
 import { setTeacherPin } from '../../utils/teacherPin';
 import { postToSheet } from '../../utils/sheetsSync';
+import { sharedRosterEnabled } from '../../utils/sharedRoster';
 import { parseSpeedTestLessonId, rateResult } from '../../data/speedTest';
 import { TypingSession } from '../../types';
 
@@ -24,6 +25,7 @@ const latestSpeedTest = (st: Student) => {
 import {
   Download,
   Upload,
+  RefreshCw,
   Plus,
   RotateCcw,
   Search,
@@ -50,6 +52,8 @@ export const TeacherDashboard: React.FC = () => {
     removeStudent,
     setActiveStudentId,
     setCurrentView,
+    sharedRoster,
+    refreshSharedRoster,
   } = useApp();
 
   const [selectedGrade, setSelectedGrade] = useState<string>('all');
@@ -223,6 +227,15 @@ export const TeacherDashboard: React.FC = () => {
     window.alert('Test row sent. Open your Google Sheet: a row named "TEST ROW (delete me)" should appear within a few seconds.');
   };
 
+  const handleSyncRoster = async () => {
+    try {
+      const count = await refreshSharedRoster();
+      window.alert(`Class list updated: ${count} students from the roster sheet. Students on every Chromebook will see the new list the next time the site opens.`);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Could not reach the roster sheet.');
+    }
+  };
+
   const handleSwitchToStudent = (studentId: string) => {
     setActiveStudentId(studentId);
     setCurrentView('midway');
@@ -270,6 +283,16 @@ export const TeacherDashboard: React.FC = () => {
             <Download className="w-4 h-4" />
             Export CSV Report
           </button>
+          {sharedRosterEnabled() && (
+            <button
+              onClick={handleSyncRoster}
+              className="px-3.5 py-2 bg-sky-100 hover:bg-sky-200 text-sky-900 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              title={`Reload the class list from the roster sheet (${sharedRoster.length} names on this device now)`}
+            >
+              <RefreshCw className="w-4 h-4" />
+              Sync Roster
+            </button>
+          )}
           <button
             onClick={handleTestSync}
             className="px-3.5 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 whitespace-nowrap"

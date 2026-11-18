@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Volume2, VolumeX, Ticket, GraduationCap } from 'lucide-react';
 import { AddStudentModal } from './Teacher/AddStudentModal';
+import { FindNameModal } from './FindNameModal';
 
 const NEW_TYPIST = '__new__';
 
@@ -16,8 +17,11 @@ export const Navbar: React.FC = () => {
     soundMuted,
     toggleSound,
     addStudent,
+    sharedRoster,
   } = useApp();
   const [isJoinOpen, setIsJoinOpen] = useState(false);
+  const [isTypeOpen, setIsTypeOpen] = useState(false);
+  const hasClassList = sharedRoster.length > 0;
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-amber-200 shadow-xs">
@@ -89,7 +93,8 @@ export const Navbar: React.FC = () => {
                 value={activeStudentId}
                 onChange={(e) => {
                   if (e.target.value === NEW_TYPIST) {
-                    setIsJoinOpen(true);
+                    if (hasClassList) setIsJoinOpen(true);
+                    else setIsTypeOpen(true);
                   } else {
                     setActiveStudentId(e.target.value);
                   }
@@ -151,9 +156,18 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
       </div>
-      <AddStudentModal
+      <FindNameModal
         isOpen={isJoinOpen}
         onClose={() => setIsJoinOpen(false)}
+        onCantFind={() => {
+          setIsJoinOpen(false);
+          setIsTypeOpen(true);
+        }}
+        onDone={() => setCurrentView('midway')}
+      />
+      <AddStudentModal
+        isOpen={isTypeOpen}
+        onClose={() => setIsTypeOpen(false)}
         onAdd={(name, grade, avatar) => {
           addStudent(name, grade, avatar);
           setCurrentView('midway');

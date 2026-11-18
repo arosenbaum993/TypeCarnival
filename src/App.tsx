@@ -9,6 +9,7 @@ import { SpeedTest } from './components/SpeedTest';
 import { TeacherDashboard } from './components/Teacher/TeacherDashboard';
 import { TeacherPinGate } from './components/Teacher/TeacherPinGate';
 import { AddStudentModal } from './components/Teacher/AddStudentModal';
+import { FindNameModal } from './components/FindNameModal';
 import { RotateCcw } from 'lucide-react';
 
 interface ErrorBoundaryProps {
@@ -104,7 +105,8 @@ const TeacherArea: React.FC = () => {
 };
 
 const MainContent: React.FC = () => {
-  const { currentView, setCurrentView, students, addStudent } = useApp();
+  const { currentView, setCurrentView, students, addStudent, sharedRoster, rosterStatus } = useApp();
+  const [typeOwnName, setTypeOwnName] = useState(false);
 
   if (currentView === 'teacher') {
     return (
@@ -115,6 +117,28 @@ const MainContent: React.FC = () => {
   }
 
   if (students.length === 0) {
+    // A class list from the shared sheet turns sign-up into "pick your grade, then your name".
+    if (rosterStatus === 'loading') {
+      return (
+        <main className="flex-1 flex items-center justify-center p-8 text-sm text-slate-500">
+          Getting the class list ready...
+        </main>
+      );
+    }
+    if (sharedRoster.length > 0 && !typeOwnName) {
+      return (
+        <main className="flex-1">
+          <FindNameModal
+            isOpen
+            required
+            title="Welcome to TypeCarnival!"
+            onClose={() => {}}
+            onCantFind={() => setTypeOwnName(true)}
+            onTeacherSetup={() => setCurrentView('teacher')}
+          />
+        </main>
+      );
+    }
     return (
       <main className="flex-1">
         <AddStudentModal

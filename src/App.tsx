@@ -104,7 +104,7 @@ const TeacherArea: React.FC = () => {
 };
 
 const MainContent: React.FC = () => {
-  const { currentView, students, addStudent } = useApp();
+  const { currentView, setCurrentView, students, addStudent } = useApp();
 
   if (currentView === 'teacher') {
     return (
@@ -122,6 +122,7 @@ const MainContent: React.FC = () => {
           required
           onClose={() => {}}
           onAdd={addStudent}
+          onTeacherSetup={() => setCurrentView('teacher')}
           title="Welcome to TypeCarnival!"
           subtitle="Type your name to make your typist"
           submitLabel="Let's Go!"

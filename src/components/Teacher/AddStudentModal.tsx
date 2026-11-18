@@ -11,9 +11,11 @@ interface AddStudentModalProps {
   submitLabel?: string;
   // Hides Cancel/close for the first-run screen, where there is nothing to go back to.
   required?: boolean;
+  // First-run screen only: lets a teacher reach the PIN-locked Teacher View to import a class.
+  onTeacherSetup?: () => void;
 }
 
-const AVATAR_OPTIONS = ['🦊', '🦁', '🐯', '🐼', '🐨', '🦄', '🚀', '⭐', '🦖', '🤖'];
+export const AVATAR_OPTIONS =['🦊', '🦁', '🐯', '🐼', '🐨', '🦄', '🚀', '⭐', '🦖', '🤖'];
 
 export const AddStudentModal: React.FC<AddStudentModalProps> = ({
   isOpen,
@@ -23,6 +25,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
   subtitle = 'Add a student to your active class roster',
   submitLabel = 'Add Student',
   required = false,
+  onTeacherSetup,
 }) => {
   const [name, setName] = useState('');
   const [grade, setGrade] = useState<GradeLevel>('Grade 3');
@@ -133,6 +136,16 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
             </button>
           </div>
         </form>
+
+        {onTeacherSetup && (
+          <button
+            type="button"
+            onClick={onTeacherSetup}
+            className="mt-4 w-full text-center text-xs text-slate-400 hover:text-amber-700 underline underline-offset-2"
+          >
+            Teacher? Import a class roster
+          </button>
+        )}
       </div>
     </div>
   );

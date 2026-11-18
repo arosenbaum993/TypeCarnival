@@ -56,8 +56,26 @@ const EMPTY_STUDENT: Student = {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentView, setCurrentView] = useState<AppView>('midway');
+  // The address ending in #teacher opens the PIN-locked Teacher View, so teachers can bookmark it.
+  const [currentView, setCurrentView] = useState<AppView>(() =>
+    typeof window !== 'undefined' && window.location.hash === '#teacher' ? 'teacher' : 'midway',
+  );
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      if (window.location.hash === '#teacher') setCurrentView('teacher');
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  // Leaving Teacher View drops the #teacher part, so a reload goes back to the student page.
+  useEffect(() => {
+    if (currentView !== 'teacher' && window.location.hash === '#teacher') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }, [currentView]);
   const [activeMinigame, setActiveMinigame] = useState<MinigameType | null>(null);
 
   // Simple arcade audio hook instance

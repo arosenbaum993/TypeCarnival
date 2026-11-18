@@ -4,6 +4,7 @@ import { GradeLevel, Student } from '../../types';
 import { StudentDrawer } from './StudentDrawer';
 import { GoalModal } from './GoalModal';
 import { AddStudentModal } from './AddStudentModal';
+import { ImportRosterModal } from './ImportRosterModal';
 import { LESSONS } from '../../data/lessons';
 import { setTeacherPin } from '../../utils/teacherPin';
 import { postToSheet } from '../../utils/sheetsSync';
@@ -22,6 +23,7 @@ const latestSpeedTest = (st: Student) => {
 };
 import {
   Download,
+  Upload,
   Plus,
   RotateCcw,
   Search,
@@ -55,6 +57,7 @@ export const TeacherDashboard: React.FC = () => {
   const [inspectedStudent, setInspectedStudent] = useState<Student | null>(null);
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   // Filter students
   const filteredStudents = useMemo(() => {
@@ -250,6 +253,14 @@ export const TeacherDashboard: React.FC = () => {
           >
             <Plus className="w-4 h-4" />
             Enroll Student
+          </button>
+          <button
+            onClick={() => setIsImportOpen(true)}
+            className="px-3.5 py-2 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 whitespace-nowrap"
+            title="Add a whole class at once from a CSV file"
+          >
+            <Upload className="w-4 h-4" />
+            Import Roster
           </button>
           <button
             onClick={handleExportCSV}
@@ -645,6 +656,8 @@ export const TeacherDashboard: React.FC = () => {
         onClose={() => setIsAddStudentOpen(false)}
         onAdd={addStudent}
       />
+
+      <ImportRosterModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
     </div>
   );
 };

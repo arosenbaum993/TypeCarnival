@@ -28,6 +28,7 @@ interface AppContextType {
   unlockPrize: (studentId: string, prizeId: string, cost: number) => boolean;
   setStudentTheme: (studentId: string, themeId: string) => void;
   addStudent: (name: string, grade: GradeLevel, avatar: string) => Student;
+  importStudents: (entries: { name: string; grade: GradeLevel; avatar: string }[]) => number;
   removeStudent: (studentId: string) => void;
   updateClassGoal: (newGoal: Partial<ClassGoal>) => void;
   clearRoster: () => void;
@@ -326,6 +327,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newStudent;
   };
 
+  // Adds many students in one update. Unlike addStudent it keeps the current active student,
+  // and every new id is unique even though they are all created in the same millisecond.
+  const importStudents = (entries: { name: string; grade: GradeLevel; avatar: string }[]): number => {
+    if (entries.length === 0) return 0;
+    const stamp = Date.now();
+    const today = new Date().toISOString().slice(0, 10);
+    const weekday = new Date().toLocaleDateString('en-US', { weekday: 'short' });
+    const created: Student[] = entries.map((entry, i) => ({
+      id: `student-${stamp}-${i}-${Math.random().toString(36).slice(2, 7)}`,
+      name: entry.name,
+      grade: entry.grade,
+      avatar: entry.avatar,
+      totalTickets: 50,
+      currentLevelId: 'lesson-1',
+      unlockedPrizes: ['theme-classic'],
+      activeTheme: 'theme-classic',
+      lastActive: 'Just added',
+      dailyStreak: 1,
+      lastPracticeDate: today,
+      weeklyStreakDays: [weekday],
+      sessions: [],
+    }));
+    setStudents(prev => [...prev, ...created]);
+    if (!activeStudentId) setActiveStudentId(created[0].id);
+    return created.length;
+  };
+
   const updateClassGoal = (newGoal: Partial<ClassGoal>) => {
     setClassGoal(prev => ({
       ...prev,
@@ -371,6 +399,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         unlockPrize,
         setStudentTheme,
         addStudent,
+        importStudents,
         removeStudent,
         updateClassGoal,
         clearRoster,
